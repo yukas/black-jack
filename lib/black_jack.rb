@@ -4,6 +4,8 @@
     @machine_points = 0
     @golden_point_player = 0
     @golden_point_machine = 0
+    @continue_game = true
+    @distribution = "Yes"
     
     @pack_parity = {
       "6S"  => 6, "6H"  => 6, "6C"  => 6,  "6D"  => 6,  "7S" => 7,  "7H" => 7, "7C" => 7, "7D" => 7,
@@ -20,44 +22,59 @@
 
   def game
     perform_first_hand_of_cards
-    gameplay
+    perform_the_remaining_cards_are_dealt
     result_games
   end
 
   private
   
   attr_reader :card_player, :card_machine, :player_points, :machine_points, :golden_point_player, :golden_point_machine, 
-                :pack_parity, :points, :usage
+                :pack_parity, :points, :continue_game, :distribution
               
   def perform_first_hand_of_cards
-    distribution_cards_player
-    distribution_cards_machine
+    distribution_card_player
+    distribution_card_machine
   end
 
-  def gameplay
-    continue_game = true
-    distribution = "Yes"
-
-    while continue_game == true && player_points < 21 && machine_points < 21 || machine_points < 19 && player_points < 21
-      if continue_game == true && player_points < 21
-        puts "\nЖелаешь еще одну карту? Напиши 'Yes' или 'No'.\n\n"
-        distribution = gets.chomp
-        if distribution == "yes" || distribution == "Yes"
-          distribution_cards_player
-        else
-          continue_game = false
-        end
-      end
-
-      if machine_points < 19 && player_points < 21
-        distribution_cards_machine
-      end
+  def perform_the_remaining_cards_are_dealt
+    while check_the_condition_of_the_continuation_of_the_game
+      gameplay
     end
 
+    report_on_completion_of_the_game
+  end
+  
+  def check_the_condition_of_the_continuation_of_the_game
+    continue_game == true && player_points < 21 && machine_points < 21 || machine_points < 19 && player_points < 21 && machine_points <= player_points
+  end
+  
+  def gameplay
+    if continue_game == true && player_points < 21
+      get_the_answer_player
+      to_continue_a_game?
+    end
+    
+    distribution_card_machine if continue_game == true || machine_points <= player_points
+  end
+  
+  def report_on_completion_of_the_game
     puts "\nИгра окончена! У меня #{machine_points} очк#{ending_word(machine_points)}, а у тебя #{player_points} очк#{ending_word(player_points)}.\n\n"
   end
-
-  def distribution_cards_player
+  
+  def get_the_answer_player
+    puts "\nЖелаешь еще одну карту? Напиши 'Yes' или 'No'.\n\n"
+    @distribution = gets.chomp
+  end
+  
+  def to_continue_a_game?
+    if distribution == "yes" || distribution == "Yes"
+      distribution_card_player
+    else
+      @continue_game = false
+    end 
+  end
+  
+  def distribution_card_player
     @card_player = get_a_random_number    
     @player_points += pack_parity[card_player]
     
@@ -67,7 +84,7 @@
     puts "\nТебе выпала вот эта карта #{color_card(card_player)}, у тебя #{player_points} очк#{ending_word(player_points)}.\n"
   end
 
-  def distribution_cards_machine
+  def distribution_card_machine
     puts "\nТеперь моя раздача:\n\n"
 
     @card_machine = get_a_random_number
@@ -83,16 +100,16 @@
     pack_parity.keys[rand(pack_parity.size)]
   end
   
-  def remove_the_precipitated_card(card)
-    @pack_parity = @pack_parity.delete_if { |key, value| key == card }
-  end
-  
   def check_golden_point(card)
     if card == card_machine
       @golden_point_machine += 1 if pack_parity[card] == 11
     else
       @golden_point_player += 1 if pack_parity[card] == 11
     end
+  end
+  
+  def remove_the_precipitated_card(card)
+    @pack_parity = @pack_parity.delete_if { |key, value| key == card }
   end
   
   def color_card(card)
