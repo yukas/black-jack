@@ -1,4 +1,4 @@
-﻿class BlackJack
+class BlackJack
   def initialize
     @player_points = 0
     @machine_points = 0
